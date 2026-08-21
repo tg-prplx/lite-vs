@@ -1,0 +1,17 @@
+*.log
+*.tmp
+*.bak
+*.dll
+*.exe
+*.so
+*.dylib
+*.lib
+*.ttf
+*.otf
+session.lua
+font_cache.lua
+error.txt
+ws/
+backups/
+.DS_Store
+Thumbs.db

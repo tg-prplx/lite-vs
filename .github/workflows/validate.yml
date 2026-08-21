@@ -1,0 +1,52 @@
+name: validate
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Lua parser
+        run: sudo apt-get update && sudo apt-get install -y lua5.4
+
+      - name: Parse Lua
+        run: find colors plugins -type f -name '*.lua' -print0 | xargs -0 -n1 luac -p
+
+      - name: Parse shell installers
+        run: bash -n scripts/install.sh scripts/uninstall.sh
+
+      - name: Parse PowerShell installers
+        shell: pwsh
+        run: |
+          $failed = $false
+          Get-ChildItem scripts -Filter '*.ps1' | ForEach-Object {
+            $tokens = $null
+            $errors = $null
+            [void][Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$errors)
+            if ($errors.Count) {
+              $errors | ForEach-Object { Write-Error $_ -ErrorAction Continue }
+              $failed = $true
+            }
+          }
+          if ($failed) { exit 1 }
+
+      - name: Reject private or binary assets
+        run: |
+          if find . -type f \( -iname '*.dll' -o -iname '*.exe' -o -iname '*.so' -o -iname '*.dylib' -o -iname '*.lib' -o -iname '*.ttf' -o -iname '*.otf' -o -iname 'session.lua' -o -iname 'font_cache.lua' -o -iname 'error.txt' \) -print -quit | grep -q .; then
+            echo 'Forbidden private or binary asset found.' >&2
+            exit 1
+          fi
+
+      - name: Reject branded code assets and system font paths
+        run: |
+          if grep -RniE 'microsoft_visual_studio_code|visual studio code|copilot|C:\\Windows\\Fonts' colors plugins; then
+            echo 'Forbidden branded or platform-specific code reference found.' >&2
+            exit 1
+          fi
