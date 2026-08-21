@@ -1,5 +1,8 @@
 # lite-vs
 
+<img width="2559" height="1439" alt="image" src="https://github.com/user-attachments/assets/0fc8cc51-8e0d-4956-b49e-57ca1fcefca7" />
+
+
 [Русская версия](README.ru.md)
 
 An independent, cross-platform workbench layer for Lite XL 2.1.8+. It adds a
