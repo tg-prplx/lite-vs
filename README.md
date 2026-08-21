@@ -1,5 +1,7 @@
 # lite-vs
 
+[Русская версия](README.ru.md)
+
 An independent, cross-platform workbench layer for Lite XL 2.1.8+. It adds a
 compact borderless title bar, responsive editor tabs, animated sidebars and
 bottom panel, command and file pickers, integrated terminal controls, source
