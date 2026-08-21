@@ -7,7 +7,7 @@
 
 An independent, cross-platform workbench layer for Lite XL 2.1.8+. It adds a
 compact borderless title bar, responsive editor tabs, animated sidebars and
-bottom panel, command and file pickers, integrated terminal controls, source
+bottom panel, command and file pickers, multi-session integrated terminals, source
 control, extension management, and a matching dark syntax palette.
 
 The project is runtime-only: it does not patch Lite XL's installed core files.
@@ -114,6 +114,24 @@ bindings.
 | Toggle sidebar | `Ctrl+B` | `Cmd+B` |
 | Toggle bottom panel | `Ctrl+J` | `Cmd+J` |
 | New integrated terminal | `Ctrl+Shift+\`` | `Cmd+Shift+\`` |
+
+## Integrated terminal
+
+The terminal stays inside the animated bottom panel. The `+` button creates an
+independent shell instead of restarting the current one; use the shell name in
+the panel header to switch sessions. The trash button kills only the active
+session. Clear, restart, kill, and hide actions are also available from the
+adjacent menu.
+
+On Windows, lite-vs prefers Windows PowerShell when the terminal plugin still
+uses the default `COMSPEC` (`cmd.exe`), matching the usual modern-editor setup.
+To keep Command Prompt instead, add this to your Lite XL `init.lua`:
+
+```lua
+config.plugins.lite_vs_terminal = { prefer_powershell = false }
+```
+
+Explicit non-default shells remain unchanged on every platform.
 
 ## Portability and project boundaries
 

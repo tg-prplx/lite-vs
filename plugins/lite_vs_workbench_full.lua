@@ -1462,21 +1462,70 @@ end
 -- -------------------------------------------------------------------------
 
 local terminal_panel, terminal_node
+local TerminalPanel
+local terminal_sessions = {}
+local panel_visible = false
+local panel_height
+local create_terminal_session
+local select_terminal_session
+local close_terminal_session
+local toggle_panel
+
+local function terminal_session_index(session)
+  for index, candidate in ipairs(terminal_sessions) do
+    if candidate == session then return index end
+  end
+end
+
+local function integrated_terminal_options()
+  local options = common.merge({}, config.plugins.terminal)
+  local settings = type(config.plugins.lite_vs_terminal) == "table"
+    and config.plugins.lite_vs_terminal or {}
+  if PLATFORM == "Windows" and settings.prefer_powershell ~= false then
+    local configured = tostring(options.shell or "")
+    local comspec = tostring(os.getenv("COMSPEC") or "")
+    if configured == "" or (comspec ~= "" and configured:lower() == comspec:lower()) then
+      local powershell = (os.getenv("SystemRoot") or "C:\\Windows")
+        .. "\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+      if system.get_file_info(powershell) then
+        options.shell = powershell
+        options.newline = "\r"
+      end
+    end
+  end
+  return options
+end
 
 local function panel_menu(x, y)
-  workbench.open_menu("Terminal Actions", x, y, {
+  local items = {
     { text = "New Terminal", action = function() command.perform "lite-vs:terminal-new" end, shortcut = "Ctrl+Shift+`" },
     { text = "Clear Terminal", action = function()
-      if terminal_panel then core.set_active_view(terminal_panel); command.perform "terminal:clear" end
+      if terminal_panel and terminal_panel.terminal then
+        core.set_active_view(terminal_panel)
+        command.perform "terminal:clear"
+      end
     end, shortcut = "Ctrl+L" },
+    { text = "Restart Active Terminal", action = function() command.perform "lite-vs:terminal-restart" end, shortcut = "" },
     { separator = true },
     { text = "Kill Terminal", action = function() command.perform "lite-vs:terminal-kill" end, shortcut = "" },
     { text = "Hide Panel", action = function() command.perform "lite-vs:toggle-panel" end, shortcut = "Ctrl+J" },
-  })
+  }
+  if #terminal_sessions > 0 then
+    items[#items + 1] = { separator = true }
+    for index, session in ipairs(terminal_sessions) do
+      local target = index
+      local active = session == terminal_panel
+      items[#items + 1] = {
+        text = (active and "Current: " or "Switch to: ") .. session:get_session_title(),
+        action = function() select_terminal_session(target, true) end,
+      }
+    end
+  end
+  workbench.open_menu("Terminal Actions", x, y, items)
 end
 
 if ok_terminal and terminal_plugin.class then
-  local TerminalPanel = terminal_plugin.class:extend()
+  TerminalPanel = terminal_plugin.class:extend()
 
   function TerminalPanel:new(options)
     TerminalPanel.super.new(self, options)
@@ -1493,14 +1542,30 @@ if ok_terminal and terminal_plugin.class then
     self.mode_indicator_target_w = nil
   end
 
+  function TerminalPanel:get_session_title()
+    local name = self.terminal and self.terminal:name()
+      or common.basename((self.options and self.options.shell) or "Terminal")
+    name = common.basename(tostring(name or "Terminal"))
+      :gsub("%.[eE][xX][eE]$", "")
+    local index = terminal_session_index(self) or 1
+    if index > 1 then name = name .. " (" .. index .. ")" end
+    return name
+  end
+
   function TerminalPanel:set_target_size(axis, value)
     if axis == "y" then
       local maximum = math.max(PANEL_HEADER_H, core.root_view.size.y * 0.82)
       value = common.clamp(value, 0, maximum)
       self.size.y = value
       self.target_height = value
-      self.panel_visible = value > 1
-      if value > PANEL_HEADER_H then self.open_height = value end
+      panel_visible = value > 1
+      self.panel_visible = panel_visible
+      if value > PANEL_HEADER_H then
+        panel_height = value
+        for _, session in ipairs(terminal_sessions) do
+          session.open_height = value
+        end
+      end
       core.redraw = true
       return true
     end
@@ -1579,6 +1644,29 @@ if ok_terminal and terminal_plugin.class then
       { "close", "cod-close", function() command.perform "lite-vs:toggle-panel" end },
     }
     local ax = self.position.x + self.size.x - #specs * 36 * SCALE - 8 * SCALE
+    local selector_w = math.min(220 * SCALE, math.max(120 * SCALE, self.size.x * 0.22))
+    local selector_x = ax - selector_w - 8 * SCALE
+    if selector_x > tx + 8 * SCALE then
+      local hit = { id = "sessions", action = function(hit)
+          panel_menu(hit.x, hit.y + hit.h)
+        end,
+        x = selector_x, y = self.position.y + 5 * SCALE,
+        w = selector_w, h = 32 * SCALE }
+      self.panel_hits[#self.panel_hits + 1] = hit
+      if self.panel_hover == hit then
+        draw_round_rect(hit.x + 2 * SCALE, hit.y + 3 * SCALE,
+          hit.w - 4 * SCALE, hit.h - 6 * SCALE, C.hover)
+      end
+      common.draw_text(icon_font, C.dim, map["cod-terminal"] or ">_", nil,
+        hit.x + 8 * SCALE, hit.y, 0, hit.h)
+      local label_x = hit.x + 31 * SCALE
+      local label_w = hit.w - 54 * SCALE
+      common.draw_text(style.font, C.text,
+        fit_text(style.font, self:get_session_title(), label_w),
+        nil, label_x, hit.y, 0, hit.h)
+      common.draw_text(icon_font, C.dim, map["cod-chevron_down"] or "v", "center",
+        hit.x + hit.w - 25 * SCALE, hit.y, 22 * SCALE, hit.h)
+    end
     for _, spec in ipairs(specs) do
       local hit = { id = spec[1], icon = spec[2], action = spec[3],
         x = ax, y = self.position.y + 5 * SCALE, w = 34 * SCALE, h = 32 * SCALE }
@@ -1662,32 +1750,123 @@ if ok_terminal and terminal_plugin.class then
     core.redraw = true
   end
 
-  function TerminalPanel:close()
+  function TerminalPanel:dispose()
     self:restart()
     self.panel_visible = false
     self.target_height = 0
-    core.terminal_view_closed = self.open_height
-    restore_editor_focus()
   end
 
-  terminal_panel = TerminalPanel(config.plugins.terminal)
+  function TerminalPanel:close()
+    if close_terminal_session then
+      close_terminal_session(self)
+    else
+      self:dispose()
+      restore_editor_focus()
+    end
+  end
+
+  terminal_panel = TerminalPanel(integrated_terminal_options())
+  terminal_sessions[1] = terminal_panel
+  panel_height = terminal_panel.open_height
   primary_node = core.root_view:get_primary_node()
   terminal_node = primary_node:split("down", terminal_panel, { y = true }, true)
   core.terminal_view = terminal_panel
   core.terminal_view_node = terminal_node
   core.terminal_view_closed = terminal_panel.open_height
+  core.lite_vs_terminal_sessions = terminal_sessions
 end
 
 local function panel_open()
-  return terminal_panel and terminal_panel.panel_visible
+  return terminal_panel and panel_visible
 end
 
-local function toggle_panel(force_open)
+select_terminal_session = function(target, focus)
+  local session = type(target) == "number" and terminal_sessions[target] or target
+  if not session or not terminal_node then return end
+  if terminal_panel and terminal_panel ~= session then
+    session.position.x, session.position.y = terminal_panel.position.x, terminal_panel.position.y
+    session.size.x, session.size.y = terminal_panel.size.x, terminal_panel.size.y
+    session.open_height = panel_height or terminal_panel.open_height
+  end
+  terminal_panel = session
+  terminal_node.active_view = session
+  core.terminal_view = session
+  for _, candidate in ipairs(terminal_sessions) do
+    candidate.panel_visible = panel_visible
+    candidate.open_height = panel_height or candidate.open_height
+  end
+  if focus ~= false and panel_visible then core.set_active_view(session) end
+  core.redraw = true
+  return session
+end
+
+create_terminal_session = function()
+  if not TerminalPanel or not terminal_node then return end
+  if #terminal_sessions == 1 and not panel_visible
+    and not terminal_sessions[1].terminal then
+    local session = terminal_sessions[1]
+    session.panel_mode = "terminal"
+    select_terminal_session(session, false)
+    toggle_panel(true)
+    return session
+  end
+  local session = TerminalPanel(integrated_terminal_options())
+  session.panel_mode = "terminal"
+  session.open_height = panel_height or session.open_height
+  session.panel_visible = panel_visible
+  if terminal_panel then
+    session.position.x, session.position.y = terminal_panel.position.x, terminal_panel.position.y
+    session.size.x, session.size.y = terminal_panel.size.x, terminal_panel.size.y
+  end
+  terminal_sessions[#terminal_sessions + 1] = session
+  terminal_node.views[#terminal_node.views + 1] = session
+  select_terminal_session(session, false)
+  toggle_panel(true)
+  return session
+end
+
+close_terminal_session = function(session)
+  session = session or terminal_panel
+  local index = terminal_session_index(session)
+  if not index then return end
+  if #terminal_sessions == 1 then
+    session:dispose()
+    panel_visible = false
+    core.terminal_view_closed = panel_height or session.open_height
+    restore_editor_focus()
+    core.redraw = true
+    return
+  end
+
+  local was_active_session = session == terminal_panel
+  local had_keyboard_focus = core.active_view == session
+  session:dispose()
+  table.remove(terminal_sessions, index)
+  for view_index, view in ipairs(terminal_node.views) do
+    if view == session then
+      table.remove(terminal_node.views, view_index)
+      break
+    end
+  end
+  if was_active_session then
+    local replacement = terminal_sessions[math.min(index, #terminal_sessions)]
+    select_terminal_session(replacement, had_keyboard_focus)
+  else
+    core.redraw = true
+  end
+end
+
+toggle_panel = function(force_open)
   if not terminal_panel or not terminal_node then return end
   local open = force_open == nil and not panel_open() or force_open
-  terminal_panel.panel_visible = open
-  terminal_panel.target_height = open and terminal_panel.open_height or 0
-  core.terminal_view_closed = open and nil or terminal_panel.open_height
+  panel_visible = open
+  panel_height = panel_height or terminal_panel.open_height
+  for _, session in ipairs(terminal_sessions) do
+    session.panel_visible = open
+    session.open_height = panel_height
+    session.target_height = open and panel_height or 0
+  end
+  core.terminal_view_closed = open and nil or panel_height
   core.redraw = true
   if open then core.set_active_view(terminal_panel) else restore_editor_focus() end
 end
@@ -1816,10 +1995,29 @@ command.add(nil, {
     toggle_panel(true)
   end,
   ["lite-vs:terminal-new"] = function()
-    if terminal_panel then terminal_panel.panel_mode = "terminal"; terminal_panel:restart(); toggle_panel(true) end
+    create_terminal_session()
   end,
   ["lite-vs:terminal-kill"] = function()
-    if terminal_panel then terminal_panel:close() end
+    close_terminal_session(terminal_panel)
+  end,
+  ["lite-vs:terminal-restart"] = function()
+    if terminal_panel then
+      terminal_panel.panel_mode = "terminal"
+      terminal_panel:restart()
+      toggle_panel(true)
+    end
+  end,
+  ["lite-vs:terminal-next"] = function()
+    local index = terminal_session_index(terminal_panel)
+    if index and #terminal_sessions > 1 then
+      select_terminal_session(index % #terminal_sessions + 1, true)
+    end
+  end,
+  ["lite-vs:terminal-previous"] = function()
+    local index = terminal_session_index(terminal_panel)
+    if index and #terminal_sessions > 1 then
+      select_terminal_session((index - 2) % #terminal_sessions + 1, true)
+    end
   end,
   ["lite-vs:toggle-window-maximized"] = function()
     system.set_window_mode(core.window_mode == "maximized" and "normal" or "maximized")
@@ -1834,14 +2032,16 @@ if terminal_panel then
       else toggle_panel(true) end
     end,
     ["terminal:open-tab"] = function()
-      terminal_panel.panel_mode = "terminal"; terminal_panel:restart(); toggle_panel(true)
+      create_terminal_session()
     end,
     ["terminal:focus"] = function() terminal_panel.panel_mode = "terminal"; toggle_panel(true) end,
     ["terminal:execute"] = function(text)
       local submit = function(value)
         terminal_panel.panel_mode = "terminal"
         toggle_panel(true)
-        terminal_panel:input(value .. terminal_panel.options.newline)
+        if terminal_panel then
+          terminal_panel:input(value .. terminal_panel.options.newline)
+        end
       end
       if text then submit(text) else core.command_view:enter("Execute Command", { submit = submit }) end
     end,
@@ -2026,4 +2226,7 @@ return {
   sidebars = sidebar_views,
   secondary = secondary_view,
   terminal = terminal_panel,
+  terminal_sessions = terminal_sessions,
+  create_terminal_session = create_terminal_session,
+  select_terminal_session = select_terminal_session,
 }
