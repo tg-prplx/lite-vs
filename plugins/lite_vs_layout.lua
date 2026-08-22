@@ -299,35 +299,41 @@ function TitleView:draw()
     or controls_x
   local center_right = (tool_count > 0 and tools_x or controls_x) - 8 * SCALE
 
-  -- Keep an actual caption gap whenever space permits. Navigation disappears
-  -- before Search, and Search switches to an icon-only compact form before it
-  -- is finally hidden. Every rectangle is derived from the remaining width,
-  -- so hit areas cannot overlap either.
-  local raw_center_w = math.max(0, center_right - mx)
-  local caption_gap = 16 * SCALE
-  if raw_center_w >= 520 * SCALE then
-    caption_gap = 76 * SCALE
-  elseif raw_center_w >= 340 * SCALE then
-    caption_gap = 40 * SCALE
-  end
-  caption_gap = math.min(caption_gap, raw_center_w)
-  local center_left = mx + caption_gap
-  local available_center_w = math.max(0, center_right - center_left)
+  -- VS Code's command center is anchored to the geometric center of the
+  -- complete title toolbar, rather than centered inside whatever space is
+  -- left between the menus and layout controls. Keep that invariant while
+  -- progressively dropping navigation buttons and shrinking Search on narrow
+  -- windows. The safety margins also leave usable native caption regions.
+  local toolbar_center_x = ox + self.size.x / 2
+  local center_margin = 12 * SCALE
+  local search_max_w = 820 * SCALE
+  local search_min_w = 44 * SCALE
+  local nav_count = 2
+  local nav_w, search_w
 
-  local nav_count = 0
-  if available_center_w >= 240 * SCALE then
-    nav_count = 2
-  elseif available_center_w >= 180 * SCALE then
-    nav_count = 1
+  local function fit_centered_search(count)
+    local gap = count > 0 and 6 * SCALE or 0
+    local navigation_w = count * 36 * SCALE + gap
+    local left_half = toolbar_center_x - (mx + center_margin + navigation_w)
+    local right_half = center_right - center_margin - toolbar_center_x
+    local width = math.min(search_max_w,
+      2 * math.max(0, math.min(left_half, right_half)))
+    return navigation_w, width
   end
-  local nav_gap = nav_count > 0 and 6 * SCALE or 0
-  local nav_w = nav_count * 36 * SCALE + nav_gap
-  local search_x = center_left + nav_w
-  local search_w = math.min(820 * SCALE,
-    math.max(0, center_right - search_x))
+
+  nav_w, search_w = fit_centered_search(nav_count)
+  while nav_count > 0 do
+    local required_w = nav_count == 2 and 180 * SCALE or 120 * SCALE
+    if search_w >= required_w then break end
+    nav_count = nav_count - 1
+    nav_w, search_w = fit_centered_search(nav_count)
+  end
+
+  local search_x = toolbar_center_x - search_w / 2
+  local center_left = search_x - nav_w
   local search_y = oy + 9 * SCALE
   local search_h = TITLE_H - 18 * SCALE
-  local show_search = search_w >= 44 * SCALE
+  local show_search = search_w >= search_min_w
 
   if nav_count >= 1 then
     local back = add_hit(self, "back", center_left, oy,

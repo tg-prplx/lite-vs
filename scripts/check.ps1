@@ -76,5 +76,12 @@ if ($terminalWorkbench -notmatch 'function\s+TerminalPanel:is\(class\)' -or
   $failed = $true
 }
 
+$layout = Get-Content -LiteralPath (Join-Path $root 'plugins\lite_vs_layout.lua') -Raw
+if ($layout -notmatch 'toolbar_center_x\s*=\s*ox\s*\+\s*self\.size\.x\s*/\s*2' -or
+    $layout -notmatch 'search_x\s*=\s*toolbar_center_x\s*-\s*search_w\s*/\s*2') {
+  Write-Error 'The title-bar Search control must remain geometrically centered.' -ErrorAction Continue
+  $failed = $true
+}
+
 if ($failed) { exit 1 }
 Write-Host 'All local checks passed.' -ForegroundColor Green
