@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 1.0.5 - 2026-08-22
+
+- Tightened the Settings content column and aligned it directly beside the
+  category navigation instead of leaving a large artificial center gap.
+- Rebuilt buttons, text fields, numeric steppers, and item lists as coherent
+  controls, and removed the legacy folding-section underline from the new UI.
+
 ## 1.0.4 - 2026-08-22
 
 - Rebuilt Settings as a responsive workbench page with vertical category

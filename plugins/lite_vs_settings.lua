@@ -8,6 +8,7 @@ local style = require "core.style"
 local Widget = require "libraries.widget"
 local TextBox = require "libraries.widget.textbox"
 local SelectBox = require "libraries.widget.selectbox"
+local NumberBox = require "libraries.widget.numberbox"
 local Toggle = require "libraries.widget.toggle"
 local Label = require "libraries.widget.label"
 local nerd = require "libraries.font_symbols_nerdfont_mono_regular"
@@ -31,31 +32,34 @@ local C = {
   navigation = { common.color "#181818" },
   card = { common.color "#252526" },
   card_hover = { common.color "#2A2D2E" },
-  control = { common.color "#313131" },
-  control_hover = { common.color "#3A3A3A" },
-  border = { common.color "#3C3C3C" },
-  border_focus = { common.color "#0078D4" },
+  input = { common.color "#313131" },
+  input_hover = { common.color "#3C3C3C" },
+  border = { common.color "#3F3F46" },
+  border_focus = { common.color "#007ACC" },
   text = { common.color "#CCCCCC" },
   bright = { common.color "#FFFFFF" },
   muted = { common.color "#9D9D9D" },
-  accent = { common.color "#0078D4" },
+  accent = { common.color "#0E639C" },
+  accent_hover = { common.color "#1177BB" },
   knob = { common.color "#FFFFFF" },
 }
 
 local ROOT_MARGIN = 28 * SCALE
-local HEADER_H = 86 * SCALE
-local NAV_W = 220 * SCALE
-local NAV_GAP = 28 * SCALE
-local TAB_H = 44 * SCALE
+local HEADER_H = 82 * SCALE
+local NAV_W = 210 * SCALE
+local NAV_GAP = 36 * SCALE
+local TAB_H = 42 * SCALE
 local TAB_GAP = 6 * SCALE
-local CONTENT_HEADING_H = 58 * SCALE
-local MAX_CONTENT_W = 1120 * SCALE
-local SECTION_H = 46 * SCALE
-local CONTROL_MAX_W = 520 * SCALE
+local CONTENT_HEADING_H = 54 * SCALE
+local MAX_CONTENT_W = 820 * SCALE
+local SECTION_H = 42 * SCALE
+local CONTROL_MAX_W = 500 * SCALE
+local LIST_MAX_W = 620 * SCALE
+local CONTROL_H = 34 * SCALE
 
 local function navigation_metrics(width)
   if width >= 760 * SCALE then return NAV_W, NAV_GAP end
-  if width >= 560 * SCALE then return 168 * SCALE, 20 * SCALE end
+  if width >= 560 * SCALE then return 164 * SCALE, 24 * SCALE end
   return 52 * SCALE, 14 * SCALE
 end
 
@@ -89,25 +93,28 @@ local function draw_round_outline(x, y, w, h, radius, border, fill)
     math.max(1, radius - inset), fill)
 end
 
+local action_icons = {
+  ["User Module"] = map["cod-edit"],
+  ["Clear Fonts Cache"] = map["cod-trash"],
+  ["Add"] = map["cod-add"],
+  ["Remove"] = map["cod-remove"],
+  ["Visit Website"] = map["cod-link_external"],
+}
+
 local function draw_button_contents(self, color)
   local font = self:get_font()
-  local offset_x = self.position.x + self.padding.x
   local height = self:get_height()
-  local icon_h = style.icon_font:get_height()
-  local text_h = font:get_height()
-  if self.icon and self.icon.code then
-    renderer.draw_text(style.icon_font, self.icon.code, offset_x,
-      text_h > icon_h and self.position.y + (height - icon_h) / 2
-        or self.position.y + self.padding.y,
-      color)
-    offset_x = offset_x + style.icon_font:get_width(self.icon.code)
-      + style.padding.x / 2
+  local offset_x = self.position.x + self.padding.x
+  local icon = self.lite_vs_action_icon
+  if icon then
+    local icon_w = 18 * SCALE
+    common.draw_text(icon_font, color, icon, "center", offset_x,
+      self.position.y, icon_w, height)
+    offset_x = offset_x + icon_w + 6 * SCALE
   end
   if self.label and self.label ~= "" then
-    renderer.draw_text(font, self.label, offset_x,
-      icon_h > text_h and self.position.y + (height - text_h) / 2
-        or self.position.y + self.padding.y,
-      color)
+    common.draw_text(font, color, self.label, nil, offset_x,
+      self.position.y, 0, height)
   end
 end
 
@@ -143,7 +150,7 @@ local function draw_section_tab(self)
   local pane = self.lite_vs_settings_section
   local hovered = self.hover_text ~= nil
   draw_round_outline(self.position.x, self.position.y,
-    self.size.x, self.size.y, 8 * SCALE, C.border,
+    self.size.x, self.size.y, 5 * SCALE, C.border,
     hovered and C.card_hover or C.card)
   local chevron = pane.expanded and map["cod-chevron_down"]
     or map["cod-chevron_right"]
@@ -158,25 +165,46 @@ end
 local function draw_control_button(self)
   if not self:is_visible() then return false end
   local hovered = self.hover_text ~= nil
+  if self.lite_vs_stepper then
+    if hovered then
+      renderer.draw_rect(self.position.x + 1 * SCALE,
+        self.position.y + 1 * SCALE,
+        math.max(0, self.size.x - 2 * SCALE),
+        math.max(0, self.size.y - 2 * SCALE), C.input_hover)
+    end
+    common.draw_text(section_font, hovered and C.bright or C.text,
+      self.label or "", "center", self.position.x, self.position.y,
+      self.size.x, self.size.y)
+    return true
+  end
+  local primary = self.lite_vs_primary
   draw_round_outline(self.position.x, self.position.y,
-    self.size.x, self.size.y, 6 * SCALE, C.border,
-    hovered and C.control_hover or C.control)
-  draw_button_contents(self, hovered and C.bright or C.text)
+    self.size.x, self.size.y, 3 * SCALE,
+    primary and (hovered and C.accent_hover or C.accent) or C.border,
+    primary and (hovered and C.accent_hover or C.accent)
+      or (hovered and C.input_hover or C.input))
+  draw_button_contents(self,
+    primary and C.bright or (hovered and C.bright or C.text))
   return true
 end
 
 local function draw_textbox(self)
   if not self:is_visible() then return false end
   local focused = self.active or core.active_view == self.textview
-  draw_round_outline(self.position.x, self.position.y,
-    self.size.x, self.size.y, 6 * SCALE,
-    focused and C.border_focus or C.border, C.control)
-  self.textview.position.x = self.position.x + style.padding.x
+  if not self.lite_vs_embedded then
+    draw_round_outline(self.position.x, self.position.y,
+      self.size.x, self.size.y, 3 * SCALE,
+      focused and C.border_focus or C.border, C.input)
+  end
+  local text_padding = 10 * SCALE
+  self.textview.position.x = self.position.x + text_padding
   self.textview.position.y = self.position.y - style.padding.y / 2.5
-  self.textview.size.x = math.max(0, self.size.x - style.padding.x * 2)
+  self.textview.size.x = math.max(0, self.size.x - text_padding * 2)
   self.textview.size.y = self.size.y - style.padding.y * 2
-  core.push_clip_rect(self.position.x + style.padding.x / 2,
-    self.position.y, math.max(0, self.size.x - style.padding.x), self.size.y)
+  core.push_clip_rect(self.position.x + 2 * SCALE,
+    self.position.y + 1 * SCALE,
+    math.max(0, self.size.x - 4 * SCALE),
+    math.max(0, self.size.y - 2 * SCALE))
   self.textview:draw()
   core.pop_clip_rect()
   self:draw_scrollbar()
@@ -187,8 +215,8 @@ local function draw_selectbox(self)
   if not self:is_visible() then return false end
   local hovered = self.hover_text ~= nil
   draw_round_outline(self.position.x, self.position.y,
-    self.size.x, self.size.y, 6 * SCALE,
-    hovered and C.border_focus or C.border, C.control)
+    self.size.x, self.size.y, 3 * SCALE,
+    hovered and C.border_focus or C.border, C.input)
   local text = self.selected == 0 and self.label
     or self.list:get_row_text(self.selected + 1)
   text = self:text_overflow(text, self.size.x - 54 * SCALE, self:get_font())
@@ -200,6 +228,30 @@ local function draw_selectbox(self)
     self.position.x + self.size.x - 38 * SCALE,
     self.position.y, 30 * SCALE, self.size.y)
   return true
+end
+
+local function draw_numberbox(self)
+  if not self:is_visible() then return false end
+  local focused = self.textbox.active or core.active_view == self.textbox.textview
+  draw_round_outline(self.position.x, self.position.y,
+    self.size.x, self.size.y, 3 * SCALE,
+    focused and C.border_focus or C.border, C.input)
+  Widget.draw(self)
+  local first_x = self.decrease_button.position.x
+  local second_x = self.increase_button.position.x
+  renderer.draw_rect(first_x, self.position.y + 1 * SCALE,
+    math.max(1, SCALE), math.max(0, self.size.y - 2 * SCALE), C.border)
+  renderer.draw_rect(second_x, self.position.y + 1 * SCALE,
+    math.max(1, SCALE), math.max(0, self.size.y - 2 * SCALE), C.border)
+  return true
+end
+
+local function draw_itemslist(self)
+  if not self:is_visible() then return false end
+  local list = self.list
+  draw_round_outline(list.position.x, list.position.y,
+    list.size.x, list.size.y, 3 * SCALE, C.border, C.input)
+  return Widget.draw(self)
 end
 
 local function draw_toggle(self)
@@ -227,13 +279,41 @@ local function style_widget(widget)
   if widget.type_name == "widget.textbox" then
     widget.border.width = 0
     widget.render_background = false
+    widget.textview.draw_background = function() end
+    local original_set_size = widget.set_size
+    function widget:set_size(width)
+      original_set_size(self, width)
+      self.size.y = CONTROL_H
+    end
+    widget:set_size(widget.size.x)
     widget.draw = draw_textbox
   elseif widget.type_name == "widget.selectbox" then
     widget.border.width = 0
     widget.render_background = false
+    local original_update = widget.update
+    function widget:update()
+      local result = original_update(self)
+      if result == false then return false end
+      self.size.y = CONTROL_H
+      return result
+    end
+    widget.size.y = CONTROL_H
     widget.draw = draw_selectbox
     widget.list_container.background_color = C.card
     widget.list_container.border.color = C.border_focus
+  elseif widget.type_name == "widget.numberbox" then
+    widget.border.width = 0
+    widget.render_background = false
+    widget.draw = draw_numberbox
+    widget.textbox.lite_vs_embedded = true
+    widget.decrease_button.lite_vs_stepper = true
+    widget.increase_button.lite_vs_stepper = true
+  elseif widget.type_name == "widget.itemslist" then
+    widget.border.width = 0
+    widget.render_background = false
+    widget.draw = draw_itemslist
+    widget.list.border.width = 0
+    widget.list.render_background = false
   elseif widget.type_name == "widget.toggle" then
     widget.render_background = false
     widget.draw = draw_toggle
@@ -241,6 +321,25 @@ local function style_widget(widget)
   elseif widget.type_name == "widget.button" then
     widget.border.width = 0
     widget.render_background = false
+    widget.lite_vs_action_icon = action_icons[widget.label]
+    widget.icon.code = nil
+    widget.padding.x = widget.lite_vs_stepper and 0 or 12 * SCALE
+    widget.padding.y = 5 * SCALE
+    widget.lite_vs_primary = widget.label == "User Module"
+      or widget.label == "Add" or widget.label == "Visit Website"
+    local original_update = widget.update
+    function widget:update()
+      local result = original_update(self)
+      if result == false then return false end
+      if self.lite_vs_stepper then self.size.x = CONTROL_H end
+      if self.lite_vs_action_icon then self.size.x = self.size.x + 24 * SCALE end
+      self.size.y = CONTROL_H
+      return result
+    end
+    widget:set_label(widget.label)
+    if widget.lite_vs_stepper then widget.size.x = CONTROL_H end
+    if widget.lite_vs_action_icon then widget.size.x = widget.size.x + 24 * SCALE end
+    widget.size.y = CONTROL_H
     widget.draw = draw_control_button
   elseif widget.type_name == "widget.label" then
     widget.foreground_color = widget.desc and C.muted or C.text
@@ -294,6 +393,11 @@ local function patch_foldingbook(book)
     end
     return result
   end
+  function book:draw()
+    if not self:is_visible() then return false end
+    self.render_background = false
+    return Widget.draw(self)
+  end
   for _, pane in ipairs(book.panes) do
     pane.tab.lite_vs_settings_section = pane
     pane.tab.border.width = 0
@@ -319,7 +423,7 @@ function notebook:update()
   local content_area_x = nav_w + nav_gap
   local available_w = math.max(0, self.size.x - content_area_x)
   local content_w = math.min(MAX_CONTENT_W, available_w)
-  local content_x = content_area_x + math.max(0, (available_w - content_w) / 2)
+  local content_x = content_area_x
   for index, pane in ipairs(self.panes) do
     pane.tab:set_position(0, (index - 1) * (TAB_H + TAB_GAP))
     pane.tab:set_size(nav_w, TAB_H)
@@ -386,12 +490,12 @@ function SettingsClass:update()
           if child.type_name == "widget.line" then
             x = 0
           elseif child:is(TextBox) or child:is(SelectBox)
-            or child.type_name == "widget.numberbox" then
+            or child:is(NumberBox) then
             child:set_size(math.min(CONTROL_MAX_W,
               pane.container:get_width() - 36 * SCALE))
           elseif child.type_name == "widget.itemslist"
             or child.type_name == "widget.filepicker" then
-            child:set_size(math.min(720 * SCALE,
+            child:set_size(math.min(LIST_MAX_W,
               pane.container:get_width() - 36 * SCALE), child.size.y)
           end
           child:set_position(x, y)

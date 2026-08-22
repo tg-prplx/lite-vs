@@ -87,7 +87,11 @@ if ($layout -notmatch 'toolbar_center_x\s*=\s*ox\s*\+\s*self\.size\.x\s*/\s*2' -
 $settingsUi = Get-Content -LiteralPath (Join-Path $root 'plugins\lite_vs_settings.lua') -Raw
 if ($settingsUi -notmatch 'while\s+not\s+settings\.ui\s+do' -or
     $settingsUi -notmatch 'navigation_metrics' -or
-    $settingsUi -notmatch 'MAX_CONTENT_W') {
+    $settingsUi -notmatch 'MAX_CONTENT_W' -or
+    $settingsUi -notmatch 'local\s+content_x\s*=\s*content_area_x' -or
+    $settingsUi -notmatch 'function\s+book:draw\(\)' -or
+    $settingsUi -notmatch 'draw_numberbox' -or
+    $settingsUi -notmatch 'textview\.draw_background\s*=\s*function\(\)\s*end') {
   Write-Error 'Settings must defer until the upstream UI exists and retain responsive geometry.' -ErrorAction Continue
   $failed = $true
 }
