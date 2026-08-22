@@ -1,5 +1,5 @@
--- mod-version:3
 -- priority:103
+-- mod-version:3
 -- Functional workbench views for the custom Lite XL layout.
 
 local core = require "core"
@@ -26,7 +26,7 @@ local ok_projectsearch, projectsearch = pcall(require, "plugins.projectsearch")
 local map = nerd.utf8
 local icon_font = renderer.font.load(nerd.path, 18 * SCALE,
   { antialiasing = "grayscale", hinting = "full" })
-local title_font = style.font
+local title_font = core.lite_vs_ui_bold_font or style.font
 
 local C = {
   side = { common.color "#181818" },

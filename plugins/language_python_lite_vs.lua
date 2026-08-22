@@ -1,5 +1,5 @@
--- mod-version:3
 -- priority:150
+-- mod-version:3
 -- Python grammar tuned for the bundled dark workbench theme.
 -- Kept in the user directory so Lite XL updates cannot overwrite it.
 

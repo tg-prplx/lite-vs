@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.2 - 2026-08-22
+
+- Fixed clean-install plugin ordering on Windows, Linux, and macOS. Lite XL
+  stops parsing plugin metadata at `mod-version`, so priorities now precede it.
+- Disabled the stock toolbar before plugin loading and restored the activity
+  bar plus non-overlapping Explorer layout on fresh profiles.
+- Added a checksum-pinned open-source Inter UI font with Lite XL's bundled
+  JetBrains Mono for consistent cross-platform typography.
+- Added clean install/uninstall CI smoke tests for all three operating systems.
+
 ## 1.0.1 - 2026-08-21
 
 - Replaced destructive terminal restarts with independent integrated sessions.

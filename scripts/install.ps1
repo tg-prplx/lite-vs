@@ -7,7 +7,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$files = @(
+$projectFiles = @(
   'colors/lite-vs-dark.lua',
   'plugins/lite_vs_bootstrap.lua',
   'plugins/lite_vs_layout.lua',
@@ -15,6 +15,16 @@ $files = @(
   'plugins/lite_vs_workbench_full.lua',
   'plugins/language_python_lite_vs.lua'
 )
+$fontFiles = @(
+  'fonts/lite-vs/Inter.ttf',
+  'fonts/lite-vs/OFL.txt'
+)
+$files = @($projectFiles + $fontFiles)
+$fontCommit = 'ec626514f79f831f1ab848a82114a0ce7e2d6372'
+$fontUrl = "https://raw.githubusercontent.com/google/fonts/$fontCommit/ofl/inter/Inter%5Bopsz%2Cwght%5D.ttf"
+$fontLicenseUrl = "https://raw.githubusercontent.com/google/fonts/$fontCommit/ofl/inter/OFL.txt"
+$fontSha256 = '29160A80FF49DDCAB2C97711247E08B1FAB27A484A329CE8B813D820DC559031'
+$fontLicenseSha256 = '5B9321A4298CFEB6B34354164A1C3AFC3DB114569984C502B9B35D988FD58C57'
 $dependencies = @(
   'font_symbols_nerdfont_mono_regular',
   'navigate',
@@ -67,7 +77,7 @@ try {
 
   if ($localRoot) {
     Write-Host "Installing from $localRoot"
-    foreach ($relative in $files) {
+    foreach ($relative in $projectFiles) {
       $source = Join-Path $localRoot ($relative -replace '/', '\')
       $target = Join-Path $stagingRoot ($relative -replace '/', '\')
       New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force | Out-Null
@@ -76,11 +86,24 @@ try {
   } else {
     $rawBase = Get-RawBase $Repository $Branch
     Write-Host "Downloading $Repository ($Branch)..."
-    foreach ($relative in $files) {
+    foreach ($relative in $projectFiles) {
       $target = Join-Path $stagingRoot ($relative -replace '/', '\')
       New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force | Out-Null
       Invoke-WebRequest -Uri "$rawBase/$relative" -OutFile $target
     }
+  }
+
+  $fontTarget = Join-Path $stagingRoot 'fonts\lite-vs\Inter.ttf'
+  $fontLicenseTarget = Join-Path $stagingRoot 'fonts\lite-vs\OFL.txt'
+  New-Item -ItemType Directory -Path (Split-Path -Parent $fontTarget) -Force | Out-Null
+  Write-Host 'Downloading the open-source Inter UI font...'
+  Invoke-WebRequest -Uri $fontUrl -OutFile $fontTarget
+  Invoke-WebRequest -Uri $fontLicenseUrl -OutFile $fontLicenseTarget
+  if ((Get-FileHash -Algorithm SHA256 -LiteralPath $fontTarget).Hash -ne $fontSha256) {
+    throw 'Inter font checksum mismatch.'
+  }
+  if ((Get-FileHash -Algorithm SHA256 -LiteralPath $fontLicenseTarget).Hash -ne $fontLicenseSha256) {
+    throw 'Inter license checksum mismatch.'
   }
 
   foreach ($relative in $files) {

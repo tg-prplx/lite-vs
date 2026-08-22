@@ -43,7 +43,9 @@ curl -fsSL https://raw.githubusercontent.com/tg-prplx/lite-vs/main/scripts/insta
 
 The installer downloads the matching official LPM binary when one is not
 already available, then uses it to install the cross-platform terminal, source
-control, plugin manager, navigation, JSON, and icon dependencies.
+control, plugin manager, navigation, JSON, and icon dependencies. It also
+downloads a checksum-pinned copy of the open-source Inter variable font and
+its SIL Open Font License so the workbench has consistent metrics on every OS.
 
 ## Auditable local install
 
@@ -95,7 +97,8 @@ From a local clone:
 ./scripts/uninstall.sh --restore-latest
 ```
 
-Uninstall removes only the six files owned by this project. Shared LPM
+Uninstall removes only the eight files owned or installed by this project.
+Shared LPM
 dependencies and the `lite-vs-backups` directory are intentionally kept.
 
 ## Main shortcuts
@@ -135,14 +138,15 @@ Explicit non-default shells remain unchanged on every platform.
 
 ## Portability and project boundaries
 
-- No vendor logos, product icons, screenshots, fonts, native DLLs, EXEs, user
+- No vendor logos, product icons, screenshots, native DLLs, EXEs, user
   sessions, histories, logs, or editor binaries are included.
 - The `<>` title-bar mark and all Lua files in this repository are original
   project assets.
 - Optional functionality is installed from its upstream source through LPM;
   those packages are not redistributed here and retain their own licenses.
-- The layout uses Lite XL's configured UI font, so it does not depend on a
-  system-specific proprietary font path.
+- The installer retrieves Inter from a pinned Google Fonts revision under the
+  SIL Open Font License. Code uses JetBrains Mono from Lite XL. No proprietary
+  system font or font path is required.
 - Window movement uses Lite XL's native hit testing. An optional module named
   `lite_vs_native_drag` may provide more caption regions, but is not required
   or distributed.
@@ -158,9 +162,10 @@ Run the local validation script from PowerShell:
 .\scripts\check.ps1
 ```
 
-The CI checks Lua and shell syntax, PowerShell parser errors, accidental binary
-assets, private Lite XL state, hard-coded Windows font paths, and branded icon
-identifiers.
+The CI checks Lua and shell syntax, PowerShell parser errors, Lite XL plugin
+load order, clean install/uninstall behavior on Windows, Linux, and macOS,
+accidental binary assets, private Lite XL state, hard-coded Windows font paths,
+and branded icon identifiers.
 
 ## License
 

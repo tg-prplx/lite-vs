@@ -6,12 +6,21 @@ BRANCH=${LITE_VS_BRANCH:-main}
 USER_DIR=${LITE_USERDIR:-"$HOME/.config/lite-xl"}
 SKIP_DEPENDENCIES=${LITE_VS_SKIP_DEPENDENCIES:-0}
 
-FILES='colors/lite-vs-dark.lua
+PROJECT_FILES='colors/lite-vs-dark.lua
 plugins/lite_vs_bootstrap.lua
 plugins/lite_vs_layout.lua
 plugins/lite_vs_workbench.lua
 plugins/lite_vs_workbench_full.lua
 plugins/language_python_lite_vs.lua'
+FONT_FILES='fonts/lite-vs/Inter.ttf
+fonts/lite-vs/OFL.txt'
+FILES="$PROJECT_FILES
+$FONT_FILES"
+FONT_COMMIT=ec626514f79f831f1ab848a82114a0ce7e2d6372
+FONT_URL="https://raw.githubusercontent.com/google/fonts/$FONT_COMMIT/ofl/inter/Inter%5Bopsz%2Cwght%5D.ttf"
+FONT_LICENSE_URL="https://raw.githubusercontent.com/google/fonts/$FONT_COMMIT/ofl/inter/OFL.txt"
+FONT_SHA256=29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031
+FONT_LICENSE_SHA256=5b9321a4298cfeb6b34354164a1c3afc3db114569984c502b9b35d988fd58c57
 DEPENDENCIES='font_symbols_nerdfont_mono_regular navigate nerdicons plugin_manager scm tab_switcher terminal json'
 
 download() {
@@ -25,6 +34,23 @@ download() {
     echo 'curl or wget is required.' >&2
     exit 1
   fi
+}
+
+verify_sha256() {
+  file=$1
+  expected=$2
+  if command -v sha256sum >/dev/null 2>&1; then
+    actual=$(sha256sum "$file" | awk '{print $1}')
+  elif command -v shasum >/dev/null 2>&1; then
+    actual=$(shasum -a 256 "$file" | awk '{print $1}')
+  else
+    echo 'sha256sum or shasum is required to verify the UI font.' >&2
+    exit 1
+  fi
+  [ "$actual" = "$expected" ] || {
+    echo "Checksum mismatch: $file" >&2
+    exit 1
+  }
 }
 
 TMP_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/lite-vs.XXXXXX")
@@ -43,7 +69,7 @@ fi
 
 if [ -n "$LOCAL_ROOT" ]; then
   echo "Installing from $LOCAL_ROOT"
-  for relative in $FILES; do
+  for relative in $PROJECT_FILES; do
     mkdir -p "$STAGING_ROOT/$(dirname "$relative")"
     cp "$LOCAL_ROOT/$relative" "$STAGING_ROOT/$relative"
   done
@@ -56,12 +82,19 @@ else
   fi
   raw_base="https://raw.githubusercontent.com/$owner_repo/$BRANCH"
   echo "Downloading $REPOSITORY ($BRANCH)..."
-  for relative in $FILES; do
+  for relative in $PROJECT_FILES; do
     mkdir -p "$STAGING_ROOT/$(dirname "$relative")"
     download "$raw_base/$relative" "$STAGING_ROOT/$relative"
     [ -s "$STAGING_ROOT/$relative" ] || { echo "Missing file: $relative" >&2; exit 1; }
   done
 fi
+
+mkdir -p "$STAGING_ROOT/fonts/lite-vs"
+echo 'Downloading the open-source Inter UI font...'
+download "$FONT_URL" "$STAGING_ROOT/fonts/lite-vs/Inter.ttf"
+download "$FONT_LICENSE_URL" "$STAGING_ROOT/fonts/lite-vs/OFL.txt"
+verify_sha256 "$STAGING_ROOT/fonts/lite-vs/Inter.ttf" "$FONT_SHA256"
+verify_sha256 "$STAGING_ROOT/fonts/lite-vs/OFL.txt" "$FONT_LICENSE_SHA256"
 
 if [ "$SKIP_DEPENDENCIES" != 1 ]; then
   LPM=${LPM_BIN:-}

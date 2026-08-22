@@ -1,5 +1,5 @@
--- mod-version:3
 -- priority:101
+-- mod-version:3
 -- Modern workbench layout patch for Lite XL 2.1.x.
 -- All changes are applied at runtime; Lite XL's installation files stay intact.
 
@@ -25,9 +25,7 @@ local activity_font = renderer.font.load(
   nerd.path, 27 * SCALE,
   { antialiasing = "grayscale", hinting = "full" }
 )
--- UI text intentionally follows Lite XL's configured font. This avoids
--- bundling a proprietary typeface and works on every supported platform.
-local explorer_font = style.font
+local explorer_font = core.lite_vs_ui_bold_font or style.font
 
 local C = {
   title = { common.color "#181818" },
@@ -553,7 +551,10 @@ function ActivityBar:on_mouse_pressed(button, x, y)
 end
 
 local activity_view = ActivityBar()
-activity_view.node = treeview.node:split("left", activity_view, { x = true })
+local tree_node = core.root_view.root_node:get_node_for_view(treeview) or treeview.node
+assert(tree_node and tree_node.type == "leaf",
+  "lite-vs could not locate the Explorer leaf node")
+activity_view.node = tree_node:split("left", activity_view, { x = true })
 treeview.node = core.root_view.root_node:get_node_for_view(treeview)
 core.lite_vs_activity_view = activity_view
 

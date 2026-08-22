@@ -13,5 +13,6 @@ font_cache.lua
 error.txt
 ws/
 backups/
+work/
 .DS_Store
 Thumbs.db

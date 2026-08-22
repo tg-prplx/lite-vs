@@ -1,5 +1,5 @@
--- mod-version:3
 -- priority:102
+-- mod-version:3
 -- Interactive workbench layer for the lite_vs_layout runtime patch.
 
 local core = require "core"
