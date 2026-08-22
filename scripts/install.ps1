@@ -13,6 +13,7 @@ $projectFiles = @(
   'plugins/lite_vs_layout.lua',
   'plugins/lite_vs_workbench.lua',
   'plugins/lite_vs_workbench_full.lua',
+  'plugins/lite_vs_settings.lua',
   'plugins/language_python_lite_vs.lua'
 )
 $fontFiles = @(

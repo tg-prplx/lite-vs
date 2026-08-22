@@ -8,6 +8,7 @@ plugins/lite_vs_bootstrap.lua
 plugins/lite_vs_layout.lua
 plugins/lite_vs_workbench.lua
 plugins/lite_vs_workbench_full.lua
+plugins/lite_vs_settings.lua
 plugins/language_python_lite_vs.lua
 fonts/lite-vs/Inter.ttf
 fonts/lite-vs/OFL.txt'

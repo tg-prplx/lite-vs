@@ -8,7 +8,8 @@
 An independent, cross-platform workbench layer for Lite XL 2.1.8+. It adds a
 compact borderless title bar, responsive editor tabs, animated sidebars and
 bottom panel, command and file pickers, multi-session integrated terminals, source
-control, extension management, and a matching dark syntax palette.
+control, extension management, a responsive Settings page, and a matching dark
+syntax palette.
 
 The project is runtime-only: it does not patch Lite XL's installed core files.
 Every project file lives in the normal Lite XL user directory and can be
@@ -97,8 +98,7 @@ From a local clone:
 ./scripts/uninstall.sh --restore-latest
 ```
 
-Uninstall removes only the eight files owned or installed by this project.
-Shared LPM
+Uninstall removes only files owned or installed by this project. Shared LPM
 dependencies and the `lite-vs-backups` directory are intentionally kept.
 
 ## Main shortcuts

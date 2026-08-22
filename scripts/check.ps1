@@ -55,6 +55,7 @@ $expectedPriorities = [ordered]@{
   'lite_vs_layout.lua' = 101
   'lite_vs_workbench.lua' = 102
   'lite_vs_workbench_full.lua' = 103
+  'lite_vs_settings.lua' = 104
   'language_python_lite_vs.lua' = 150
 }
 foreach ($entry in $expectedPriorities.GetEnumerator()) {
@@ -80,6 +81,14 @@ $layout = Get-Content -LiteralPath (Join-Path $root 'plugins\lite_vs_layout.lua'
 if ($layout -notmatch 'toolbar_center_x\s*=\s*ox\s*\+\s*self\.size\.x\s*/\s*2' -or
     $layout -notmatch 'search_x\s*=\s*toolbar_center_x\s*-\s*search_w\s*/\s*2') {
   Write-Error 'The title-bar Search control must remain geometrically centered.' -ErrorAction Continue
+  $failed = $true
+}
+
+$settingsUi = Get-Content -LiteralPath (Join-Path $root 'plugins\lite_vs_settings.lua') -Raw
+if ($settingsUi -notmatch 'while\s+not\s+settings\.ui\s+do' -or
+    $settingsUi -notmatch 'navigation_metrics' -or
+    $settingsUi -notmatch 'MAX_CONTENT_W') {
+  Write-Error 'Settings must defer until the upstream UI exists and retain responsive geometry.' -ErrorAction Continue
   $failed = $true
 }
 

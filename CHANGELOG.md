@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.0.4 - 2026-08-22
+
+- Rebuilt Settings as a responsive workbench page with vertical category
+  navigation, constrained content width, section cards, and rounded controls.
+- Added clearer hierarchy, hover/focus states, category icons, and adaptive
+  sizing for narrow windows while preserving the upstream settings behavior.
 - Anchored the title-bar Search control to the geometric center of the window.
 - Kept the centered layout responsive by removing navigation controls first
   and symmetrically shrinking Search before hiding it on very narrow windows.
