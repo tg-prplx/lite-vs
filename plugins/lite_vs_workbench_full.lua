@@ -1527,6 +1527,15 @@ end
 if ok_terminal and terminal_plugin.class then
   TerminalPanel = terminal_plugin.class:extend()
 
+  -- The upstream terminal commands use Object:is(), which only accepts an
+  -- exact class match.  This view subclasses TerminalView, so without this
+  -- compatibility bridge text input works while key commands such as Enter,
+  -- Backspace and Ctrl+C are rejected by the terminal command predicate.
+  function TerminalPanel:is(class)
+    return class == TerminalPanel or class == terminal_plugin.class
+      or TerminalPanel.super.is(self, class)
+  end
+
   function TerminalPanel:new(options)
     TerminalPanel.super.new(self, options)
     self.open_height = ((options and options.drawer_height) or config.plugins.terminal.drawer_height or 300) * SCALE

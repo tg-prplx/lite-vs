@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.3 - 2026-08-22
+
+- Fixed Backspace, Enter, and `Ctrl+C`/interrupt handling in the integrated
+  terminal panel.
+- Made the terminal subclass compatible with the upstream terminal plugin's
+  strict command predicate while retaining the custom animated panel.
+- Added regression validation for the terminal type compatibility bridge.
+
 ## 1.0.2 - 2026-08-22
 
 - Fixed clean-install plugin ordering on Windows, Linux, and macOS. Lite XL

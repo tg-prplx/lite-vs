@@ -69,5 +69,12 @@ foreach ($entry in $expectedPriorities.GetEnumerator()) {
   }
 }
 
+$terminalWorkbench = Get-Content -LiteralPath (Join-Path $root 'plugins\lite_vs_workbench_full.lua') -Raw
+if ($terminalWorkbench -notmatch 'function\s+TerminalPanel:is\(class\)' -or
+    $terminalWorkbench -notmatch 'class\s*==\s*terminal_plugin\.class') {
+  Write-Error 'Integrated TerminalPanel must satisfy the upstream TerminalView predicate.' -ErrorAction Continue
+  $failed = $true
+}
+
 if ($failed) { exit 1 }
 Write-Host 'All local checks passed.' -ForegroundColor Green

@@ -124,7 +124,8 @@ The terminal stays inside the animated bottom panel. The `+` button creates an
 independent shell instead of restarting the current one; use the shell name in
 the panel header to switch sessions. The trash button kills only the active
 session. Clear, restart, kill, and hide actions are also available from the
-adjacent menu.
+adjacent menu. Backspace, Enter, and `Ctrl+C` are routed directly to the active
+PTY session, including real process interruption.
 
 On Windows, lite-vs prefers Windows PowerShell when the terminal plugin still
 uses the default `COMSPEC` (`cmd.exe`), matching the usual modern-editor setup.
