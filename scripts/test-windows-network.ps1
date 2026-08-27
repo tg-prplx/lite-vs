@@ -118,3 +118,6 @@ $global:LASTEXITCODE = $LASTEXITCODE
     Remove-Item -LiteralPath $resolved -Recurse -Force
   } else { Write-Warning "Test artifacts retained at $testRoot" }
 }
+# The negative test deliberately sets LASTEXITCODE to 37. Report success only
+# after all assertions and cleanup pass; CI shells inspect this variable.
+$global:LASTEXITCODE = 0
