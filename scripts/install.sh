@@ -22,7 +22,7 @@ FONT_URL="https://raw.githubusercontent.com/google/fonts/$FONT_COMMIT/ofl/inter/
 FONT_LICENSE_URL="https://raw.githubusercontent.com/google/fonts/$FONT_COMMIT/ofl/inter/OFL.txt"
 FONT_SHA256=29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031
 FONT_LICENSE_SHA256=5b9321a4298cfeb6b34354164a1c3afc3db114569984c502b9b35d988fd58c57
-DEPENDENCIES='font_symbols_nerdfont_mono_regular navigate nerdicons plugin_manager scm tab_switcher terminal json'
+DEPENDENCIES='font_symbols_nerdfont_mono_regular navigate nerdicons plugin_manager scm tab_switcher terminal settings json'
 
 download() {
   url=$1

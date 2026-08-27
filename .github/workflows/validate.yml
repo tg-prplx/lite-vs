@@ -55,6 +55,18 @@ jobs:
             exit 1
           fi
 
+  windows-network-fallback:
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: [powershell, pwsh]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Full dependency install with simulated native HTTPS failure
+        shell: ${{ matrix.shell }}
+        run: ./scripts/test-windows-network.ps1
+
   install-smoke:
     strategy:
       fail-fast: false

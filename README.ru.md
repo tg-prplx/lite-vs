@@ -24,6 +24,23 @@
 irm https://raw.githubusercontent.com/tg-prplx/lite-vs/main/scripts/install.ps1 | iex
 ```
 
+Поддерживается Windows PowerShell 5.1 (в том числе Windows 10) и PowerShell 7.
+Если встроенный HTTPS-загрузчик LPM выдаёт `can't connect ... Unknown error`,
+установщик автоматически повторит загрузку через Windows PowerShell.
+Проверка сертификатов и контрольных сумм остаётся включённой.
+
+Если устанавливаете из ранее скачанного ZIP, сначала скачайте свежий архив:
+старая копия `install.ps1` не обновляется автоматически. Чтобы принудительно
+использовать Windows-загрузчик в свежей локальной копии:
+
+```powershell
+.\scripts\install.ps1 -DependencyTransport PowerShell
+```
+
+Если ошибку выдаёт и Windows-загрузчик, проверьте доступ к указанному в ней
+хосту и настройки сети/прокси. `-SkipDependencies` не является исправлением:
+без зависимостей интерфейс и терминал не будут работать полностью.
+
 ### Linux
 
 ```sh

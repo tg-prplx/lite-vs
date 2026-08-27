@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 1.0.6 - 2026-08-28
+
+- Added automatic Windows PowerShell HTTPS fallback when LPM's native
+  downloader cannot connect, plus an explicit `-DependencyTransport PowerShell`
+  mode. TLS certificate and LPM checksum validation remain enabled.
+- Added PowerShell 5.1-compatible download retries and TLS 1.2 negotiation.
+- Made Settings an explicit dependency on all platforms.
+- Added full-dependency Windows regression tests for native connection failure,
+  checksum rejection, temporary environment restoration, and preserving existing
+  project files when dependency installation fails (PowerShell 5.1 and 7 in CI).
+
 ## 1.0.5 - 2026-08-22
 
 - Tightened the Settings content column and aligned it directly beside the

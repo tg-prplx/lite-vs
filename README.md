@@ -28,6 +28,22 @@ Open PowerShell and run:
 irm https://raw.githubusercontent.com/tg-prplx/lite-vs/main/scripts/install.ps1 | iex
 ```
 
+Supports Windows PowerShell 5.1 (including Windows 10) and PowerShell 7.
+If LPM's native HTTPS downloader fails with `can't connect ... Unknown error`,
+the installer automatically retries through Windows PowerShell. Certificate
+validation and LPM's package checksums remain enabled.
+
+For an older downloaded ZIP, download a fresh copy first: local installers do
+not update themselves. To explicitly use the Windows downloader in a fresh clone:
+
+```powershell
+.\scripts\install.ps1 -DependencyTransport PowerShell
+```
+
+If that downloader also fails, check access to the reported host and your
+network/proxy configuration. `-SkipDependencies` is not a repair: the workbench
+and terminal require those dependencies.
+
 ### Linux
 
 ```sh
