@@ -63,8 +63,13 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Full dependency install with simulated native HTTPS failure
-        shell: ${{ matrix.shell }}
+      - name: Full dependency install with native HTTPS failure (PowerShell 5.1)
+        if: matrix.shell == 'powershell'
+        shell: powershell
+        run: ./scripts/test-windows-network.ps1
+      - name: Full dependency install with native HTTPS failure (PowerShell 7)
+        if: matrix.shell == 'pwsh'
+        shell: pwsh
         run: ./scripts/test-windows-network.ps1
 
   install-smoke:
